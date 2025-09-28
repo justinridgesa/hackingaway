@@ -232,7 +232,9 @@ with st.expander("Example Questions", expanded=False):
 # ---------------------------
 # OpenAI API Key Input
 # ---------------------------
-st.sidebar.image("logo.png", width=150)  # Larger logo
+col1, col2, col3 = st.sidebar.columns(3)
+with col2:
+    st.sidebar.image("logo.png", width=150)  # Larger logo
 st.sidebar.header("Enter your OpenAI API Key")
 st.session_state["OPENAI_API_KEY"] = st.sidebar.text_input(
     "API Key",
