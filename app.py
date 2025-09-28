@@ -281,13 +281,13 @@ elif data_source == "Dataverse":
     tenant_id = st.sidebar.text_input(
         "Tenant ID",
         help="Your Azure AD Tenant ID (GUID format)",
-        placeholder="e.g. 6d8daa07-7400-4795-bafb-d61ef0db40ad"
+        
     )
     
     client_id = st.sidebar.text_input(
         "Client ID (Application ID)",
         help="Your App Registration Client ID",
-        placeholder="e.g. 87678c1f-3dc0-4caf-8eec-9137c288a63d"
+        
     )
     
     client_secret = st.sidebar.text_input(
