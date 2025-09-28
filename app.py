@@ -276,84 +276,121 @@ if data_source == "Upload CSV/Excel":
 # --- Dataverse Connection ---
 elif data_source == "Dataverse":
     st.sidebar.subheader("Dataverse Connection")
-    tenant_id = "6d8daa07-7400-4795-bafb-d61ef0db40ad"
-    client_id = "87678c1f-3dc0-4caf-8eec-9137c288a63d"
-    client_secret = "UxP8Q~KP3tRQwxNJ5I3FUndEnyJ_l~ApvxOQXdqx"
-    resource_url = "https://orgd567af6d.crm4.dynamics.com/"
-
-    try:
-        access_token = get_access_token(tenant_id, client_id, client_secret, resource_url)
-        tables = get_tables(access_token, resource_url)
-        table_options = {f"{t['EntitySetName']} ({t['DisplayName']})": t["EntitySetName"] for t in tables}
-    except Exception as e:
-        st.error(f"Error fetching tables: {e}")
+    
+    # User input fields for Dataverse credentials
+    tenant_id = st.sidebar.text_input(
+        "Tenant ID",
+        help="Your Azure AD Tenant ID (GUID format)",
+        placeholder="e.g. 6d8daa07-7400-4795-bafb-d61ef0db40ad"
+    )
+    
+    client_id = st.sidebar.text_input(
+        "Client ID (Application ID)",
+        help="Your App Registration Client ID",
+        placeholder="e.g. 87678c1f-3dc0-4caf-8eec-9137c288a63d"
+    )
+    
+    client_secret = st.sidebar.text_input(
+        "Client Secret",
+        type="password",
+        help="Your App Registration Client Secret",
+        placeholder="Enter your client secret"
+    )
+    
+    resource_url = st.sidebar.text_input(
+        "Dataverse Environment URL",
+        help="Your Dataverse environment URL",
+        placeholder="e.g. https://orgname.crm4.dynamics.com/"
+    )
+    
+    # Only proceed if all fields are filled
+    if tenant_id and client_id and client_secret and resource_url:
+        try:
+            with st.spinner("Connecting to Dataverse..."):
+                access_token = get_access_token(tenant_id, client_id, client_secret, resource_url)
+                tables = get_tables(access_token, resource_url)
+                table_options = {f"{t['EntitySetName']} ({t['DisplayName']})": t["EntitySetName"] for t in tables}
+            st.sidebar.success(f"✓ Connected! Found {len(tables)} custom tables")
+        except Exception as e:
+            st.sidebar.error(f"❌ Connection failed: {e}")
+            tables = []
+            table_options = {}
+    else:
+        st.sidebar.info("Please enter all Dataverse connection details above")
         tables = []
         table_options = {}
 
-    table_display = st.sidebar.selectbox("Select Table", options=[""] + list(table_options.keys()), index=0)
-    table_name = table_options.get(table_display)
+    if table_options:
+        table_display = st.sidebar.selectbox("Select Table", options=[""] + list(table_options.keys()), index=0)
+        table_name = table_options.get(table_display)
 
-    # Get the logical name for field fetching (try singular if plural)
-    field_fetch_name = table_name
-    if table_name and table_name.endswith("s"):
-        field_fetch_name = table_name[:-1]
+        # Get the logical name for field fetching (try singular if plural)
+        field_fetch_name = table_name
+        if table_name and table_name.endswith("s"):
+            field_fetch_name = table_name[:-1]
 
-    if table_name:
-        with st.spinner("Fetching table fields..."):
-            fields = get_fields(field_fetch_name, access_token, resource_url)
-            
-        if fields:
-            st.sidebar.success(f"Found {len(fields)} fields")
-            
-            # Show field breakdown
-            primary_fields = [f for f in fields if f.get("IsPrimaryId", False)]
-            custom_fields = [f for f in fields if f.get("IsCustomAttribute", False)]
-            system_fields = [f for f in fields if not f.get("IsCustomAttribute", False) and not f.get("IsPrimaryId", False)]
-            
-            with st.sidebar.expander("Field Summary", expanded=False):
-                st.write(f"Primary Key Fields: {len(primary_fields)}")
-                st.write(f"Custom Fields: {len(custom_fields)}")
-                st.write(f"System Fields: {len(system_fields)}")
-            
-            # Test field access to avoid 400 errors
-            with st.spinner("Testing field accessibility..."):
-                accessible_fields = test_field_access(table_name, fields, access_token, resource_url)
-            
-            if accessible_fields:
-                field_options = {f"{f['LogicalName']} ({f['DisplayName']})": f["LogicalName"] for f in accessible_fields}
+        if table_name:
+            with st.spinner("Fetching table fields..."):
+                fields = get_fields(field_fetch_name, access_token, resource_url)
                 
-                # Default selection: primary key + first few custom fields
-                default_selections = []
-                for f in accessible_fields:
-                    if f.get("IsPrimaryId", False) or f.get("IsCustomAttribute", False):
-                        default_selections.append(f"{f['LogicalName']} ({f['DisplayName']})")
-                    if len(default_selections) >= 10:  # Limit to 10 default selections
-                        break
+            if fields:
+                st.sidebar.success(f"Found {len(fields)} fields")
                 
-                if not default_selections:
-                    default_selections = list(field_options.keys())[:5]
+                # Show field breakdown
+                primary_fields = [f for f in fields if f.get("IsPrimaryId", False)]
+                custom_fields = [f for f in fields if f.get("IsCustomAttribute", False)]
+                system_fields = [f for f in fields if not f.get("IsCustomAttribute", False) and not f.get("IsPrimaryId", False)]
                 
-                selected_fields = st.sidebar.multiselect(
-                    "Select Fields",
-                    options=list(field_options.keys()),
-                    default=default_selections
-                )
+                with st.sidebar.expander("Field Summary", expanded=False):
+                    st.write(f"Primary Key Fields: {len(primary_fields)}")
+                    st.write(f"Custom Fields: {len(custom_fields)}")
+                    st.write(f"System Fields: {len(system_fields)}")
+                
+                # Test field access to avoid 400 errors
+                with st.spinner("Testing field accessibility..."):
+                    accessible_fields = test_field_access(table_name, fields, access_token, resource_url)
+                
+                if accessible_fields:
+                    field_options = {f"{f['LogicalName']} ({f['DisplayName']})": f["LogicalName"] for f in accessible_fields}
+                    
+                    # Default selection: primary key + first few custom fields
+                    default_selections = []
+                    for f in accessible_fields:
+                        if f.get("IsPrimaryId", False) or f.get("IsCustomAttribute", False):
+                            default_selections.append(f"{f['LogicalName']} ({f['DisplayName']})")
+                        if len(default_selections) >= 10:  # Limit to 10 default selections
+                            break
+                    
+                    if not default_selections:
+                        default_selections = list(field_options.keys())[:5]
+                    
+                    selected_fields = st.sidebar.multiselect(
+                        "Select Fields",
+                        options=list(field_options.keys()),
+                        default=default_selections
+                    )
+                else:
+                    st.sidebar.error("No accessible fields found")
+                    field_options = {}
+                    selected_fields = []
             else:
-                st.sidebar.error("No accessible fields found")
+                st.sidebar.error("No fields found for this table")
+                accessible_fields = []
                 field_options = {}
                 selected_fields = []
         else:
-            st.sidebar.error("No fields found for this table")
-            accessible_fields = []
+            fields = []
             field_options = {}
             selected_fields = []
+            accessible_fields = []
+
+        top = st.sidebar.number_input("Max rows to fetch", min_value=100, max_value=10000, value=1000, step=100)
     else:
-        fields = []
+        # No tables available or connection failed
+        table_name = None
+        accessible_fields = []
         field_options = {}
         selected_fields = []
-        accessible_fields = []
-
-    top = st.sidebar.number_input("Max rows to fetch", min_value=100, max_value=10000, value=1000, step=100)
 
 # --- Dataverse Load Table ---
 if st.sidebar.button("Load Table") and table_name:
