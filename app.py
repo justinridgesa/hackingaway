@@ -210,13 +210,13 @@ def clean_system_columns(df: pd.DataFrame) -> pd.DataFrame:
 # App Inputs / Config
 # ---------------------------
 MODEL_LIST = ["gpt-4o-mini", "gpt-4o"]
-TITLE = "Pandas Data Analyst AI Copilot"
+TITLE = "JR's Analyst AI Copilot"
 
 st.set_page_config(page_title=TITLE, page_icon="📊")
 st.title(TITLE)
 
 st.markdown("""
-Welcome to the Pandas Data Analyst AI. Upload a CSV/Excel file or connect to Dataverse and ask questions about your data.  
+Welcome to the JR's Data Analyst AI. Upload a CSV/Excel file or connect to Microsoft Dataverse and ask questions about your data.  
 The AI agent will analyze your dataset and return either data tables or interactive charts.
 """)
 
