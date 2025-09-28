@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ai-data-science-team
 streamlit
 sqlalchemy
@@ -9,3 +10,20 @@ langgraph
 openai
 ipython
 msal
+=======
+openpyxl
+langchain
+langchain_community
+langchain_openai
+langchain_experimental
+langgraph >= 0.2.74
+openai
+pandas
+sqlalchemy
+numpy
+plotly
+streamlit
+scikit-learn
+xgboost
+psutil
+>>>>>>> c7d7994 (Restructure repo to include parent folder with all components)
